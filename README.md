@@ -1,7 +1,7 @@
 # kbot
 Telegram bot
 
-[Bot Link](t.me/kvasianovych_kbot)
+Bot Link: t.me/kvasianovych_kbot
 
 ### Usage
 1. Press "Start" button.
