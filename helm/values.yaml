@@ -1,15 +1,12 @@
 replicaCount: 1
-
 image:
   repository: kvasianovych/kbot
   pullPolicy: IfNotPresent
-  tag: "v1.0.2-c842ffb"
+  tag: "1.0.3-c86bc02"
   arch: "amd64"
-
 service:
   type: ClusterIP
   port: 80
-
 secrets:
   name: "kbot"
   env: "TELE_TOKEN"
