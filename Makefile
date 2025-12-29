@@ -20,7 +20,7 @@ get:
 	go get
 
 build: format get
-	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o kbot -ldflags "-X=github.com/kvasianovych/kbot/cmd.appVersion=${VERSION}"
+	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o kbot -ldflags "-X=github.com/kvasianovych/kbot/cmd.appVersion=v${VERSION}"
 
 image:
 	docker build -t ${REGISTRY}/${APP}:${VERSION}-${TARGETARCH} .

@@ -33,7 +33,7 @@ jobs:
       - name: Tag and Push to GHCR
         run: |
           APP=$(basename $(git remote get-url origin))
-          VERSION=$(git describe --tags --abbrev=0)-$(git rev-parse --short HEAD)
+          VERSION="v$(git describe --tags --abbrev=0)-$(git rev-parse --short HEAD)"
           TARGETOS=linux
           TARGETARCH=amd64
           DOCKERHUB_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}
