@@ -31,11 +31,12 @@ jobs:
         run: |
           APP=$(basename $(git remote get-url origin))
           VERSION=$(git describe --tags --abbrev=0)-$(git rev-parse --short HEAD)
+          TARGETOS=linux
           TARGETARCH=amd64
           DOCKERHUB_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}
           GHCR_REGISTRY=ghcr.io/${{ github.repository_owner }}
-          docker tag ${DOCKERHUB_REGISTRY}/${APP}:${VERSION}-${TARGETARCH} ${GHCR_REGISTRY}/${APP}:${VERSION}-${TARGETARCH}
-          docker push ${GHCR_REGISTRY}/${APP}:${VERSION}-${TARGETARCH}
+          docker tag ${DOCKERHUB_REGISTRY}/${APP}:${VERSION}-${TARGETARCH} ${GHCR_REGISTRY}/${APP}:${VERSION}-${TARGETOS}-${TARGETARCH}
+          docker push ${GHCR_REGISTRY}/${APP}:${VERSION}-${TARGETOS}-${TARGETARCH}
 
   cd:
     name: CD
