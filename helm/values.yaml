@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: kvasianovych/kbot
   pullPolicy: IfNotPresent
-  tag: "1.0.3-c86bc02"
+  tag: "1.0.3-2d2dc3a"
   arch: "amd64"
 service:
   # type: ClusterIP
