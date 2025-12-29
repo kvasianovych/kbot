@@ -3,7 +3,7 @@ image:
   repository: kvasianovych/kbot
   pullPolicy: IfNotPresent
   registry: "ghcr.io"
-  tag: "1.0.3-e11d7dd"
+  tag: "1.0.3-c82a2b8"
   os: linux
   arch: "amd64"
 service:
