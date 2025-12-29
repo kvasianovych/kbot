@@ -25,11 +25,25 @@ jobs:
           APP: "kbot"
           REGISTRY: ${{  secrets.DOCKERHUB_USERNAME }}
         run: make image push
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Tag and Push to GHCR
+        run: |
+          APP=$(basename $(git remote get-url origin))
+          VERSION=$(git describe --tags --abbrev=0)-$(git rev-parse --short HEAD)
+          TARGETARCH=amd64
+          DOCKERHUB_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}
+          GHCR_REGISTRY=ghcr.io/${{ github.repository_owner }}
+          docker tag ${DOCKERHUB_REGISTRY}/${APP}:${VERSION}-${TARGETARCH} ${GHCR_REGISTRY}/${APP}:${VERSION}-${TARGETARCH}
+          docker push ${GHCR_REGISTRY}/${APP}:${VERSION}-${TARGETARCH}
 
   cd:
     name: CD
     needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Checkout
@@ -43,5 +57,5 @@ jobs:
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git commit -am "Update iamge version to $VERSION"
+          git commit -am "Update image version to $VERSION"
           git push
