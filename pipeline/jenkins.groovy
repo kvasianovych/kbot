@@ -60,9 +60,9 @@ pipeline {
             }
         }
 
-        stage('login to GHCR') {
+        stage('login to docker') {
             steps {
-                sh "echo $DOCKER_HUB_PSW | docker login -u $DOCKER_HUB_USR --password-stdin"
+                sh 'echo $DOCKER_HUB_PSW | docker login -u $DOCKER_HUB_USR --password-stdin'
             }
         }
 
