@@ -1,5 +1,11 @@
 pipeline {
     agent any
+
+    environment {
+        DOCKER_HUB = credentials('dockerhub')
+        REPO = 'https://github.com/kvasianovych/kbot'
+        BRANCH = 'develop'
+    }
     
     parameters {
         choice(
@@ -56,14 +62,14 @@ pipeline {
 
         stage('login to GHCR') {
             steps {
-                sh "echo $GITHUB_TOKEN_PSW | docker login ghcr.io -u $GITHUB_TOKEN_USR --password-stdin"
+                sh "echo $DOCKER_HUB_PSW | docker login -u $DOCKER_HUB_USR --password-stdin"
             }
         }
-        
+
         stage('push image') {
             steps {
               sh "make push"
             }
-        } 
+        }
     }
 }
