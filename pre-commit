@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""
+Gitleaks pre-commit hook with auto-installation support.
+Based on: https://github.com/gitleaks/gitleaks/blob/master/scripts/pre-commit.py
+
+Enable/disable with:
+    git config hooks.gitleaks true   # enable
+    git config hooks.gitleaks false  # disable
+"""
+
+import os
+import sys
+import subprocess
+import platform
+import urllib.request
+import tarfile
+import zipfile
+import shutil
+from pathlib import Path
+
+GITLEAKS_VERSION = "8.30.0"
+GITLEAKS_RELEASES_URL = f"https://github.com/gitleaks/gitleaks/releases/download/v{GITLEAKS_VERSION}"
+
+
+def is_hook_enabled():
+    """Check if the hook is enabled via git config."""
+    try:
+        result = subprocess.run(
+            ["git", "config", "--bool", "hooks.gitleaks"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        # If not set, default to enabled (True)
+        if result.returncode != 0:
+            return True
+        return result.stdout.strip().lower() == "true"
+    except Exception:
+        return True
+
+
+def detect_os():
+    """Detect the operating system and architecture."""
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    
+    # Normalize architecture names
+    if machine in ("x86_64", "amd64"):
+        arch = "x64"
+    elif machine in ("aarch64", "arm64"):
+        arch = "arm64"
+    elif machine.startswith("arm"):
+        arch = "arm64"
+    else:
+        arch = "x64"  # default
+    
+    return system, arch
+
+
+def get_gitleaks_download_info(system, arch):
+    """Get the download URL and filename for gitleaks based on OS and architecture."""
+    if system == "linux":
+        filename = f"gitleaks_{GITLEAKS_VERSION}_linux_{arch}.tar.gz"
+    elif system == "darwin":
+        filename = f"gitleaks_{GITLEAKS_VERSION}_darwin_{arch}.tar.gz"
+    elif system == "windows":
+        filename = f"gitleaks_{GITLEAKS_VERSION}_windows_{arch}.zip"
+    else:
+        raise OSError(f"Unsupported operating system: {system}")
+    
+    url = f"{GITLEAKS_RELEASES_URL}/{filename}"
+    return url, filename
+
+
+def is_gitleaks_installed():
+    """Check if gitleaks is already installed and accessible."""
+    return shutil.which("gitleaks") is not None
+
+
+def install_gitleaks():
+    """Download and install gitleaks for the current operating system."""
+    system, arch = detect_os()
+    print(f"Detected OS: {system}, Architecture: {arch}")
+    
+    try:
+        url, filename = get_gitleaks_download_info(system, arch)
+    except OSError as e:
+        print(f"Error: {e}")
+        return False
+    
+    # Create a temporary directory for download
+    install_dir = Path.home() / ".local" / "bin"
+    install_dir.mkdir(parents=True, exist_ok=True)
+    
+    temp_file = Path("/tmp") / filename
+    
+    print(f"Downloading gitleaks from {url}...")
+    try:
+        urllib.request.urlretrieve(url, temp_file)
+    except Exception as e:
+        print(f"Failed to download gitleaks: {e}")
+        return False
+    
+    print("Extracting gitleaks...")
+    try:
+        if filename.endswith(".tar.gz"):
+            with tarfile.open(temp_file, "r:gz") as tar:
+                # Extract only the gitleaks binary
+                for member in tar.getmembers():
+                    if member.name == "gitleaks":
+                        member.name = "gitleaks"
+                        tar.extract(member, install_dir)
+                        break
+        elif filename.endswith(".zip"):
+            with zipfile.ZipFile(temp_file, "r") as zip_ref:
+                zip_ref.extract("gitleaks.exe", install_dir)
+        
+        # Make executable on Unix-like systems
+        if system != "windows":
+            gitleaks_path = install_dir / "gitleaks"
+            gitleaks_path.chmod(0o755)
+        
+        print(f"Gitleaks installed successfully to {install_dir}")
+        
+        # Check if install_dir is in PATH
+        if str(install_dir) not in os.environ.get("PATH", ""):
+            print(f"\nWarning: {install_dir} is not in your PATH.")
+            print(f"Add it to your PATH by adding this line to your shell profile:")
+            print(f'export PATH="$PATH:{install_dir}"')
+        
+        return True
+    except Exception as e:
+        print(f"Failed to extract gitleaks: {e}")
+        return False
+    finally:
+        # Clean up temp file
+        if temp_file.exists():
+            temp_file.unlink()
+
+
+def run_gitleaks():
+    """Run gitleaks to check for secrets."""
+    try:
+        result = subprocess.run(
+            ["gitleaks", "protect", "--verbose", "--redact", "--staged"],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            print("✓ No leaks detected by gitleaks")
+            return True
+        else:
+            print("\n" + "="*60)
+            print("⚠️  GITLEAKS DETECTED POTENTIAL SECRETS")
+            print("="*60)
+            print(result.stdout)
+            if result.stderr:
+                print(result.stderr)
+            print("="*60)
+            print("\nCommit rejected. Please remove secrets before committing.")
+            print("\nTo skip this check (NOT RECOMMENDED), use:")
+            print("  git commit --no-verify")
+            print("\nTo disable this hook permanently:")
+            print("  git config hooks.gitleaks false")
+            return False
+    except FileNotFoundError:
+        print("Error: gitleaks not found after installation")
+        return False
+    except Exception as e:
+        print(f"Error running gitleaks: {e}")
+        return False
+
+
+def main():
+    """Main function for the pre-commit hook."""
+    # Check if hook is enabled
+    if not is_hook_enabled():
+        print("Gitleaks hook is disabled (hooks.gitleaks=false)")
+        sys.exit(0)
+    
+    print("Running gitleaks pre-commit hook...")
+    
+    # Check if gitleaks is installed
+    if not is_gitleaks_installed():
+        print("Gitleaks not found. Installing...")
+        if not install_gitleaks():
+            print("\nFailed to install gitleaks automatically.")
+            print("Please install manually: https://github.com/gitleaks/gitleaks#installation")
+            print("\nTo disable this hook:")
+            print("  git config hooks.gitleaks false")
+            sys.exit(1)
+        
+        # Verify installation
+        if not is_gitleaks_installed():
+            print("\nGitleaks was installed but is not in PATH.")
+            print("Please add ~/.local/bin to your PATH and try again.")
+            sys.exit(1)
+    
+    # Run gitleaks
+    if run_gitleaks():
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
