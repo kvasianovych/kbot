@@ -6,7 +6,7 @@ pipeline {
         REPO = 'https://github.com/kvasianovych/kbot'
         BRANCH = 'develop'
     }
-    
+
     parameters {
         choice(
             name: 'OS',
