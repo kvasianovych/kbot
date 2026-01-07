@@ -3,7 +3,7 @@ image:
   repository: kvasianovych/kbot
   pullPolicy: IfNotPresent
   registry: "ghcr.io"
-  tag: "v1.0.3-7f5f9e3"
+  tag: "v1.0.3-083d2c0"
   os: linux
   arch: "amd64"
 service:
@@ -14,7 +14,6 @@ secrets:
   name: "kbot"
   env: "TELE_TOKEN"
   key: "token"
-
 # OpenTelemetry configuration
 otel:
   enabled: false
