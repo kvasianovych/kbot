@@ -14,3 +14,17 @@ secrets:
   name: "kbot"
   env: "TELE_TOKEN"
   key: "token"
+
+# OpenTelemetry configuration
+otel:
+  enabled: false
+  # OTEL collector endpoint (gRPC)
+  endpoint: "otel-collector-collector.monitoring.svc.cluster.local:4317"
+  # Service name for traces/metrics
+  serviceName: "kbot"
+  # Enable insecure connection (no TLS)
+  insecure: true
+  # Additional resource attributes (comma-separated key=value)
+  resourceAttributes: "deployment.environment=dev,service.namespace=kbot"
+  # Legacy METRICS_HOST support (if app uses this instead of OTEL_* vars)
+  metricsHost: ""
